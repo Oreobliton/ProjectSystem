@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, time, random, argparse
+import sys, os, time, random, argparse, re
 
 
 
@@ -81,6 +81,8 @@ def load_options() :
 def local_ls() :
     """renvoie la liste des fichiers du répertoire courant qui correspondent à FILENAME"""
     # A MODIFIER : lancer un sous-processus ls pour autoriser les wildcards dans FILENAME
+    
+    os.execv("/bin/sh", ["sh", "-c", "ls {}".format(FILENAME)])
     return [x for x in  os.listdir() if x == FILENAME]
 
 
