@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, time, random, argparse, re
+import sys, os, time, random, argparse
 
 
 
@@ -79,12 +79,22 @@ def load_options() :
 ####### FONCTIONS A MODIFIER  #####################################
     
 def local_ls() :
-    """renvoie la liste des fichiers du répertoire courant qui correspondent à FILENAME"""
-    # A MODIFIER : lancer un sous-processus ls pour autoriser les wildcards dans FILENAME
-    
-    os.execv("/bin/sh", ["sh", "-c", "ls {}".format(FILENAME)])
-    return [x for x in  os.listdir() if x == FILENAME]
-
+	(read, write) = os.pipe()
+	pid = os.fork()
+	if pid == 0:
+		os.dup2(write, 1)
+		os.close(2)
+		os.execv("/bin/sh", ["sh", "-c", "ls {}".format(FILENAME)])
+	else :
+            os.dup2(read, 0)
+            os.close(write)
+            tout_bits = bytes('', encoding= 'utf-8')
+            while True :
+                buff = os.read(0, 10)
+                if len(buff) == 0 : break
+                tout_bits +=buff
+            L = [ x for x in tout_bits.decode().split('\n') if x != '']
+            return L
 
 def explorer(dirname,relative_path) :
     """explorateur"""
