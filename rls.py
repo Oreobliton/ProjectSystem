@@ -79,13 +79,13 @@ def load_options() :
 ####### FONCTIONS A MODIFIER  #####################################
     
 def local_ls() :
-	(read, write) = os.pipe()
-	pid = os.fork()
-	if pid == 0:
-		os.dup2(write, 1)
-		os.close(2)
-		os.execv("/bin/sh", ["sh", "-c", "ls {}".format(FILENAME)])
-	else :
+    (read, write) = os.pipe()
+    pid = os.fork()
+    if pid == 0:
+        os.dup2(write, 1)
+        os.close(2)
+        os.execv("/bin/sh", ["sh", "-c", "ls {}".format(FILENAME)])
+    else :
             os.dup2(read, 0)
             os.close(write)
             tout_bits = bytes('', encoding= 'utf-8')
@@ -98,14 +98,18 @@ def local_ls() :
 
 def explorer(dirname,relative_path) :
     """explorateur"""
+    present = 1
     change_dir(dirname)
     for x in local_ls() :
         print(os.path.join(relative_path, x))
+        present = 0
     for subdir in subdirs() :
-        explorer(subdir, os.path.join(relative_path, subdir))
-        change_dir('..')
-
-
+        pid = os.fork()
+        if pid == 0:
+            explorer(subdir, os.path.join(relative_path, subdir))
+        else :
+            os.wait()
+    sys_exit(present)
         
 def main() :
     """fonction principale"""
