@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, time, random, argparse
+import sys, os, time, random, argparse, signal
 
 
 
@@ -95,22 +95,35 @@ def local_ls() :
                 tout_bits +=buff
             L = [ x for x in tout_bits.decode().split('\n') if x != '']
             return L
+ListeFils = []
+def hadler(arg1, arg2):
+    for i in ListeFils:
+        os.kill(i,signal.SIGUSR1)
+    os.waitpid(-1,0)
+    sys_exit(0)
+
+def fin(arg1, arg2):
+    os.kill(-1, signal.SIGUSR1)
+    os.waitpid(-1, 0)
+    sys_exit(2)
 
 def explorer(dirname,relative_path) :
     """explorateur"""
-    present = 1
     change_dir(dirname)
     for x in local_ls() :
         print(os.path.join(relative_path, x))
-        present = 0
+        if FIRST:
+            os.kill(os.getppid(),signal.SIGUSR1)
+            sys_exit(0)
     for subdir in subdirs() :
         pid = os.fork()
         if pid == 0:
+            ListeFils.append(os.getpid())
             explorer(subdir, os.path.join(relative_path, subdir))
         else :
-            os.wait()
-    sys_exit(present)
-        
+            signal.signal(signal.SIGUSR1, hadler)
+    sys_exit(0)
+
 def main() :
     """fonction principale"""
     load_options()
