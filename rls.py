@@ -150,7 +150,58 @@ def main() :
     signal.signal(signal.SIGUSR2,handler2)
     load_options()
     explorer('.','')
- 
+    if(SERVER):
+        launchServer()
+    else:
+        explorer('.','')
+    
+    
+########################################################################## Partie Serveur 
+def launchServer():
+    global FILENAME
+    host, port = '', 50000
+    backlog, size = 5, 1024
+
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.bind((host,port))
+    server.listen(5)
+    input = [server,sys.stdin]
+    running = 1
+    while running:                                  #Ce code fonctionne comme l'exercice 1 du TD4
+        inrdy,_,_ = select.select(input,[],[])      #Pour éviter de prendre tous les arguments de select.select en compte dans inrdy
+        for s in inrdy:
+            if s == server:
+                client, address = server.accept()
+                input.append(client)
+                print("Un client est connecté")
+
+            elif s == sys.stdin:                #Permet d'arrêter la boucle while mais aussi, permet d'éviter de mettre des choses dans l'entrée standard par inadvertance
+                running = 0 
+
+            else:
+                data = s.recv(size)             #Ici on intercepte la requête de l'utilisateur
+                if data:
+                    FILENAME=data.decode()
+                    (r,w) = os.pipe()
+                    pid = os.fork()
+                    if(pid == 0):               #Le fils doit juste écrire dans le pipe, on a pas besoin de r (on peut close)
+                        os.close(r)
+                        os.dup2(w,1)            #La on échange la sortie standard avec l'écriture dans le pipe
+                        explorer('.','')        #On appelle, on lance donc la recherche du fichier 
+                        os.close(1)             #On en a plus besoin, donc on ferme l'entrée standard
+                        sys.exit(0)             #Quand un fils termine son travail il peut exit()
+                    else:                       #Le pere doit juste lire, on peut close w
+                        os.close(w)
+                        lecteur=os.read(r,1024) #Cette partie permet au père d'envoyer les résultats obtenus part les fils au client.
+                        while(len(lecteur) > 0):
+                            s.send(lecteur)     #Ici on envoit le résultat obtenu au client puis on réinitialise lecteur.
+                            lecteur=os.read(r,1024)
+                else:
+                    print("Un client s'est déconnecté")
+                    s.close()
+                    input.remove(s)
+    server.close()
+
 
 if __name__ == "__main__" :
     main()
