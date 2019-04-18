@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys, os, time, random, argparse, signal
+import sys, os, time, random, argparse, signal, socket, select
 
 
 
@@ -95,8 +95,8 @@ def local_ls() :
         os.close(write)
         os.dup2(read,0)
         buff = os.read(read, 1)
-        while (len(buff) > 0):
-            os.write(1,buff)
+        while (len(buff)>0):
+            os.write(1, buff)
             buff = os.read(read,1)
         os.close(read)
         L = [x for x in buff.decode().split('\n') if x != '']
@@ -144,17 +144,6 @@ def explorer(dirname,relative_path) :
         Tout_processes = 2
     sys_exit(Tout_processes)
 
-def main() :
-    """fonction principale"""
-    signal.signal(signal.SIGUSR1,handler)
-    signal.signal(signal.SIGUSR2,handler2)
-    load_options()
-    explorer('.','')
-    if(SERVER):
-        launchServer()
-    else:
-        explorer('.','')
-    
     
 ########################################################################## Partie Serveur 
 def launchServer():
@@ -202,6 +191,15 @@ def launchServer():
                     input.remove(s)
     server.close()
 
+def main() :
+    """fonction principale"""
+    signal.signal(signal.SIGUSR1,handler)
+    signal.signal(signal.SIGUSR2,handler2)
+    load_options()
+    if(SERVER):
+        launchServer()
+    else:
+        explorer('.','')
 
 if __name__ == "__main__" :
     main()
