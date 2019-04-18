@@ -95,39 +95,47 @@ def local_ls() :
                 tout_bits +=buff
             L = [ x for x in tout_bits.decode().split('\n') if x != '']
             return L
+global present 
+present = 1
+global ListeFils
 ListeFils = []
-def hadler(arg1, arg2):
+
+def handler(arg1, arg2):
+    global present
+    print("RECU LA MIF")
+    print(ListeFils)
+    present = 0
     for i in ListeFils:
-        os.kill(i,signal.SIGUSR1)
-    os.waitpid(-1,0)
-    sys_exit(0)
-
-def fin(arg1, arg2):
-    os.kill(-1, signal.SIGUSR1)
-    os.waitpid(-1, 0)
-    sys_exit(2)
-
+        print("SIGNAL ENVOYE AUX FILS")
+        os.kill(i, signal.SIGUSR1)
+    
 def explorer(dirname,relative_path) :
     """explorateur"""
+    global present
     change_dir(dirname)
     for x in local_ls() :
         print(os.path.join(relative_path, x))
         if FIRST:
             os.kill(os.getppid(),signal.SIGUSR1)
+            print("SIGNAL ENVOYER")
             sys_exit(0)
     for subdir in subdirs() :
         pid = os.fork()
         if pid == 0:
             ListeFils.append(os.getpid())
+            signal.signal(signal.SIGUSR1, handler)
+            print("la c'est la liste {}".format(ListeFils))
             explorer(subdir, os.path.join(relative_path, subdir))
-        else :
-            signal.signal(signal.SIGUSR1, hadler)
-    sys_exit(0)
+    while present:
+        os.waitpid(-1, 0)
+    present = 0
+    
 
 def main() :
     """fonction principale"""
     load_options()
     explorer('.','')
+ 
 
 if __name__ == "__main__" :
     main()
